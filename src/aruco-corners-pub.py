@@ -26,23 +26,32 @@ class ArucoCornersPub:
         self.aruco_params.adaptiveThreshWinSizeMax = 23
         self.aruco_params.adaptiveThreshWinSizeStep = 10
         self.aruco_params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
+        self.aruco_params.minMarkerDistanceRate = 0.025
         # Can also adjust errorCorrectionRate, minMarkerPerimeterRate, etc.
 
 
 
     def grayscale_callback(self, msg):
-        rospy.loginfo("Received an image message")
-        rospy.loginfo(f"Image frame id: {msg.header.frame_id}, height: {msg.height}, width: {msg.width}")
+        # rospy.loginfo("Received an image message")
+        # rospy.loginfo(f"Image frame id: {msg.header.frame_id}, height: {msg.height}, width: {msg.width}")
 
         try:
             cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-            rospy.loginfo(f"Converted image shape: {cv_image.shape}, dtype: {cv_image.dtype}")
+            # rospy.loginfo(f"Converted image shape: {cv_image.shape}, dtype: {cv_image.dtype}")
 
             corners, ids, rejected = cv2.aruco.detectMarkers(
                 cv_image, 
                 self.aruco_dict, 
                 parameters=self.aruco_params
             )
+
+            for i, corner in enumerate(corners):
+                corner_coordinates = corner.reshape((4, 2))
+                # flatten (x,y) coordinates to single list [x1, y1, x2, y2, x3, y3, x4, y4]
+                flat_corners = corner_coordinates.flatten()
+                # format corners to 2 decimal places
+                formatted_corners = ', '.join([f"{pt:.2f}" for pt in flat_corners])
+                print(f"Marker ID {ids[i][0]} corners: [{formatted_corners}]")
 
             # Draw detected markers only if any are found
             if ids is not None and len(ids) > 0:
@@ -65,6 +74,7 @@ class ArucoCornersPub:
 
 if __name__ == '__main__':
     try:
+        print("OpenCV version:", cv2.__version__)
         node = ArucoCornersPub()
         node.run()
     except rospy.ROSInterruptException:
