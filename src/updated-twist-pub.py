@@ -17,37 +17,31 @@ class UpdatedTwistPub:
         rospy.init_node('updated_twist_pub')
 
         # Subscribe to aruco-corners-topic
-        self.aruco_corner_sub = rospy.Subscriber('aruco_corners_topic', Float32MultiArray, self.corner_callback)
+        self.aruco_corner_sub = rospy.Subscriber('aruco_corners_topic', Float32MultiArray, self.interaction_matrix_callback)
 
         rospy.loginfo("Subscribed to aruco-corners-topic")
 
-    def corner_callback(self, aruco_corners_msg):
-        try:
-            # data flat list like [x1, y1, d1, x2, y2, d2, ...]
-            data = np.array(aruco_corners_msg.data, dtype=np.float32)
-
-            if len(data) < 3:
-                rospy.logwarn(f"Received data length {len(data)} too short to contain even first corner's x,y,d")
-                return
-
-            # extract first corner's x, y, d
-            x1, y1, d1 = data[0], data[1], data[2]
-
-            rospy.loginfo(f"Received first corner - x: {x1:.0f}, y: {y1:.0f}, depth: {d1:.5f}m")
-
-        except Exception as e:
-            rospy.logerr(f"Error parsing aruco corners data: {e}")
-
     
     def interaction_matrix_callback(self, aruco_corners_msg):
-        f = 5
-        rho_w = 3
-        rho_h = 2
-        data = np.array(aruco_corners)
-        u = x1
-        v = y1
-        Z = d1
+        """
+        Updates entries of image Jacobian interaction matrix
+        
+        Args:
+            aruco_corners_msg (Float32MultiArray): similar to list, content: [x1, y1, d1, x2, ..., y4, d4]
+        """
+        # intrinsic ZED mini camera parameters
+        f = 5 # focal length, UPDATE
+        rho_w = 3 # pixel width conversion, UPDATE
+        rho_h = 2 # pixel height conversion, UPDATE
 
+        aruco_corners_data = np.array(aruco_corners_msg.data, dtype=np.float32)
+
+        # unpack (x,y,d) to (u,v,Z)
+        u = aruco_corners_data[0] 
+        v = aruco_corners_data[1]
+        Z = aruco_corners_data[2]
+
+        # normalizes to image coordinates, UPDATE
         u_bar = 450 - u
         v_bar = 300 - v
 
@@ -70,7 +64,10 @@ class UpdatedTwistPub:
         L[1, 4] = -(u_bar * v_bar * rho_h) / f
         L[1, 5] = -u_bar
 
-        return L
+        L_inv = np.linalg.pinv(L)
+        rospy.loginfo(f'Pseudo Inverse of Interaction Matrix L:\n{L_inv}')
+
+        return L_inv
 
     def run(self):
         rospy.spin()
