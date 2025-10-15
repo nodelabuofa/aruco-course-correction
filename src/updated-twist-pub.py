@@ -18,16 +18,19 @@ class UpdatedTwistPub:
 
         # Subscribe to aruco-corners-topic
         self.aruco_corner_sub = rospy.Subscriber('aruco_corners_topic', Float32MultiArray, self.interaction_matrix_callback)
-
         rospy.loginfo("Subscribed to aruco-corners-topic")
 
-    
+        # publish to updated_twist_topic
+        self.updated_twist_pub = rospy.Publisher('updated_twist_topic', Twist, queue_size=10)
+
     def interaction_matrix_callback(self, aruco_corners_msg):
         """
         Updates entries of image Jacobian interaction matrix
         
         Args:
             aruco_corners_msg (Float32MultiArray): similar to list, content: [x1, y1, d1, x2, ..., y4, d4]
+
+        Returns:
         """
         # intrinsic ZED mini camera parameters
         f = 5 # focal length, UPDATE
@@ -67,7 +70,31 @@ class UpdatedTwistPub:
         L_inv = np.linalg.pinv(L)
         rospy.loginfo(f'Pseudo Inverse of Interaction Matrix L:\n{L_inv}')
 
-        return L_inv
+        # momentary fixed desired pixel position of corner
+        u_desired = 200
+        v_desired = 250
+
+        # control gain
+        lambda_gain = 0.5
+
+        e = np.array([u - u_desired, v - v_desired], dtype=np.float32)
+
+         # Compute twist
+        v_twist = -lambda_gain * L_inv @ e  # Shape: (6,1)
+
+        rospy.loginfo(f'Updated Twist Vector:\n{v_twist}')
+
+        updated_twist = Twist() # special geometry_msgs datatype digestible by ROS, float64
+        updated_twist.linear.x = float(v_twist[0])
+        updated_twist.linear.y = float(v_twist[1])
+        updated_twist.linear.z = float(v_twist[2])
+        updated_twist.angular.x = float(v_twist[3])
+        updated_twist.angular.y = float(v_twist[4])
+        updated_twist.angular.z = float(v_twist[5])
+
+        self.updated_twist_pub.publish(updated_twist)
+
+        return
 
     def run(self):
         rospy.spin()
