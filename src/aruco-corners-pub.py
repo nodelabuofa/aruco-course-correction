@@ -13,6 +13,9 @@ class ArucoCornersPub:
     def __init__(self): # constructor
         rospy.init_node('aruco_corners_pub')
 
+        # aruco corners publisher
+        self.aruco_corners_pub = rospy.Publisher('aruco_corners_topic', Float32MultiArray, queue_size=10)
+
         # zed mini subscriber
         self.RGB_sub = rospy.Subscriber('/zedm/zed_node/left/image_rect_color', Image, self.RGB_callback) 
         rospy.loginfo("Subscribed to ZED Mini RGB feed")
@@ -57,18 +60,23 @@ class ArucoCornersPub:
 
             for i, corner in enumerate(corners):
                 corner_coordinates = corner.reshape((4, 2))
-
-                depths = [] # just extracts corresponding values from depth_image
                 corner_depths_array = [] # looks like [(x1, y1, d1), ... , (x4, y4, d4)]
 
                 for corner in corner_coordinates:
                     x, y = int(corner[0]), int(corner[1])
-                    # Check if indices are within depth image bounds
-                    d = float(self.depth_image[y, x])
+                    d = float(self.depth_image[y, x]) # (y,x) because (row, column)
                     corner_depths_array.append((x,y,d))
 
                 # flatten (x,y) coordinates to single list [x1, y1, x2, y2, x3, y3, x4, y4]
                 flat_corners = np.array(corner_depths_array).flatten()
+                flat_corners_list = flat_corners.tolist()
+
+                # publish to ROS
+                aruco_corners_msg = Float32MultiArray()
+                aruco_corners_msg.data = flat_corners_list
+
+                self.aruco_corners_pub.publish(aruco_corners_msg)
+
                 # format corners to 2 decimal places
                 formatted_corners = ', '.join([f"{val:.2f}" if isinstance(val, float) else str(val) for val in flat_corners])
                 print(f"Marker ID {ids[i][0]} corners: [{formatted_corners}]")
