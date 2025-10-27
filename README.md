@@ -4,9 +4,9 @@ How do we drive without depth sensing LiDAR in our eyes?
 
 We have a pinhole stereo camera (2 eyes) that perceives depth with trigonometry. We also know where the lane divider, curb, and other landmarks should be when driving straight, turning left across an intersection, etc.
 
-We then use these two to correct our throttle and steering.
+We then use these two to correct our throttle and steering, making imperfect linear corrections, correcting in small timesteps, until eventually we're back to the desired path.
 
-In short, I'm developing an image based visual servoing PID controller to adhere to a spontaneous path from a LiDAR-based motion planner, or follow somebody.
+That's what I'm trying to make an RC car do. In short, I'm developing an image based visual servoing PID controller to adhere to a spontaneous path from a LiDAR-based motion planner, or follow somebody.
 
 I programmed this with:
 - ROS1 Noetic
