@@ -1,0 +1,21 @@
+<launch>
+
+  <arg name="port" default="/dev/ttyUSB0" />
+  <arg name="control_mode" default="manual" />
+  
+  <!-- Node to run the rosserial_python serial_node.py -->
+  <node name="serial_node" pkg="rosserial_python" type="serial_node.py" output="screen">
+    <param name="port" value="$(arg port)" />
+  </node>4
+  
+  <!-- Node for the vehicle steering angle + velocity control -->
+  <node name="steering_velocity_control" pkg="vehicle_steering_velocity_ctr" 
+        type="vehicle_steering_vel_pub_node" output="screen" args="$(arg control_mode)">
+  </node>
+  
+  <!-- Node for getting the vehicle's current twist -->
+  <node name="steering_velocity_feedback" pkg="vehicle_steering_velocity_ctr" 
+        type="vehicle_steering_vel_sub_node" output="screen">
+  </node>
+  
+</launch>
