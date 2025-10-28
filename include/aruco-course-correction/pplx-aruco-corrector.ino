@@ -86,7 +86,7 @@ void updated_twist_callback(const geometry_msgs::Twist& twist_cmd)
     const float STEERING_ANGLE_MIN_RAD = -0.5225;
     const float STEERING_ANGLE_MAX_RAD = 0.483;
 
-    float steering_angle = twist_cmd.angular.z;
+    float steering_angle = twist_cmd.angular.y;
 
     // Clamp the steering angle to safeguard the linkage
     if(steering_angle < STEERING_ANGLE_MIN_RAD)
@@ -118,10 +118,10 @@ void updated_twist_callback(const geometry_msgs::Twist& twist_cmd)
       int16_t pwm_R = (int16_t)(twist_cmd.linear.y * 500);
 
       // Clamp PWM values to the maximum allowed range
-      if (pwm_L > PWM_MAX) pwm_L = PWM_MAX;
-      if (pwm_L < -PWM_MAX) pwm_L = -PWM_MAX;
-      if (pwm_R > PWM_MAX) pwm_R = PWM_MAX;
-      if (pwm_R < -PWM_MAX) pwm_R = -PWM_MAX;
+      if (pwm_L > PWM_MAX) pwm_L = 800;
+      if (pwm_L < -PWM_MAX) pwm_L = -800;
+      if (pwm_R > PWM_MAX) pwm_R = 800;
+      if (pwm_R < -PWM_MAX) pwm_R = -800;
       
       // Send PWM commands to the motors
       pwm_output_ctr(pwm_L, LEFT_MOTOR_ID);
