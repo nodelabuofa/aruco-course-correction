@@ -56,7 +56,7 @@ class UpdatedTwistPub:
 
         # control gain
         steering_gain = 0.5
-        throttle_gain = -1.25
+        throttle_gain = -0.75
 
         # unpacks (x,y,d) to (u,v,Z) for all 4 corners
         for i in range(4): # 0, 1, 2, 3
