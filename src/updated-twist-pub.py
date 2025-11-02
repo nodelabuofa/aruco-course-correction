@@ -83,12 +83,13 @@ class UpdatedTwistPub:
         # rospy.loginfo(f'Pseudo Inverse of Interaction Matrix L:\n{L_inv}')
 
         # control gain
-        lambda_gain = 25
+        steering_gain = 25
+        throttle_gain = -12
 
         e = np.array([u_bar, v_bar], dtype=np.float32)
 
          # Compute twist
-        v_twist = -lambda_gain * L_inv @ e  # Shape: (6,1)
+        v_twist = -1 * L_inv @ e  # Shape: (6,1)
 
         rospy.loginfo(f'Updated Twist Vector:\n{v_twist}')
 
@@ -96,7 +97,7 @@ class UpdatedTwistPub:
         updated_twist = Twist() # special geometry_msgs datatype digestible by ROS, float64
         
         updated_twist.angular.x = float(v_twist[3])
-        updated_twist.angular.y = float(np.arctan(v_twist[4] * 0.1825 / v_twist[2]))
+        updated_twist.angular.y = float(np.arctan(v_twist[4] * 0.1825 / v_twist[2])) * steering_gain
         updated_twist.angular.z = float(v_twist[5])
 
         updated_twist.linear.z = float(v_twist[2])
@@ -106,17 +107,17 @@ class UpdatedTwistPub:
         # 0.1778 is vehicle length (wheel center to center), 0.1667 wheelbase (rear tires, tread center to center)
         if updated_twist.angular.y == 0:
             # z axis portrudes perpendicular from lens, so z from computed twist is desired linear velocity of end effector/camera
-            updated_twist.linear.x = float(v_twist[2])
-            updated_twist.linear.y = float(v_twist[2])
+            updated_twist.linear.x = float(v_twist[2]) * throttle_gain
+            updated_twist.linear.y = float(v_twist[2]) * throttle_gain
         else:
             turning_radius = 0.1778 / np.tan(updated_twist.angular.y) # 0.
             
             if turning_radius > 0: # turning left
-                updated_twist.linear.y = float(v_twist[2]) # outer (right) wheel has max velocity
-                updated_twist.linear.x = float(((turning_radius - (0.1667 / 2)) / (turning_radius + (0.1667 / 2))) * float(v_twist[2]))
+                updated_twist.linear.y = float(v_twist[2] * throttle_gain) # outer (right) wheel has max velocity
+                updated_twist.linear.x = float(((turning_radius - (0.1667 / 2)) / (turning_radius + (0.1667 / 2))) * float(v_twist[2]) * throttle_gain)
             else: # turning right
-                updated_twist.linear.x = float(v_twist[2]) # outer (left) wheel has max velocity
-                updated_twist.linear.y = float(((turning_radius - (0.1667 / 2)) / (turning_radius + (0.1667 / 2))) * float(v_twist[2]))
+                updated_twist.linear.x = float(v_twist[2] * throttle_gain) # outer (left) wheel has max velocity
+                updated_twist.linear.y = float(((turning_radius - (0.1667 / 2)) / (turning_radius + (0.1667 / 2))) * float(v_twist[2]) * throttle_gain)
 
         self.updated_twist_pub.publish(updated_twist)
 
