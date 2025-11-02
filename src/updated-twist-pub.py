@@ -73,11 +73,11 @@ class UpdatedTwistPub:
             u_desired = self.desired_corners[i]['u']
             v_desired = self.desired_corners[i]['v']
 
-            u_bar = u - u_desired
-            v_bar = v - v_desired
-            rospy.loginfo(f'Corner {i}: Error vector ({u_bar}, {v_bar})')
+            u_error = u - u_desired
+            v_error = v - v_desired
+            rospy.loginfo(f'Corner {i}: Error vector ({u_error}, {v_error})')
 
-            e = np.array([u_bar, v_bar], dtype=np.float32) # error vector for this corner
+            e = np.array([u_error, v_error], dtype=np.float32) # error vector for this corner
 
             # 2x6 empty interaction matrix
             L = np.zeros((2, 6), dtype=np.float32)
@@ -85,18 +85,18 @@ class UpdatedTwistPub:
             # First row
             L[0, 0] = -f / Z
             L[0, 1] = 0
-            L[0, 2] = u_bar / Z
-            L[0, 3] = u_bar * v_bar / f
-            L[0, 4] = -f * rho  - ((u_bar ** 2) / f)
-            L[0, 5] = v_bar
+            L[0, 2] = u_error / Z
+            L[0, 3] = (u_error * v_error) / f
+            L[0, 4] = -f * rho  - ((u_error ** 2) / f)
+            L[0, 5] = v_error
 
             # Second row
             L[1, 0] = 0
             L[1, 1] = -f / Z
-            L[1, 2] = v_bar / Z
-            L[1, 3] = f * rho + (v_bar ** 2) / f
-            L[1, 4] = -(u_bar * v_bar) / f
-            L[1, 5] = -u_bar
+            L[1, 2] = v_error / Z
+            L[1, 3] = f * rho + ((v_error ** 2) / f)
+            L[1, 4] = -(u_error * v_error) / f
+            L[1, 5] = -u_error
 
             interaction_matrices.append(L)
             error_vectors.append(e)
