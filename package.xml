@@ -2,7 +2,7 @@
 <package format="2">
   <name>aruco-course-correction</name>
   <version>0.0.0</version>
-  <description>ArUco marker detection and visual servoing for RC car course correction</description>
+  <description>April tag detection, pose estimation, and visual servoing for RC car course correction</description>
 
   <maintainer email="your@email.com">Your Name</maintainer>
   <license>MIT</license>
@@ -13,9 +13,13 @@
   <depend>rospy</depend>
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
+  <depend>tf</depend>
   
   <!-- Python OpenCV (system dependency, use exec_depend) -->
   <exec_depend>python3-opencv</exec_depend>
+    <!-- exec depend because needs it at runtime -->
+  <exec_depend>python3-apriltag-pip</exec_depend>
+
 
   <export>
   </export>
