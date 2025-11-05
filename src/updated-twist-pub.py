@@ -64,6 +64,8 @@ class UpdatedTwistPub:
             u_0 = aruco_corners_data[i*3 + 0]
             v_0 = aruco_corners_data[i*3 + 1]
             Z = aruco_corners_data[i*3 + 2]
+            if Z == 0 or np.isnan(Z) or np.isinf(Z):
+                return
 
             # flipping so origin at bottom right of visual feed
             v_flipped = 360 - v_0
@@ -116,9 +118,10 @@ class UpdatedTwistPub:
 
             updated_twist = Twist() # special geometry_msgs datatype digestible by ROS, float64
                     
-            updated_twist.angular.x = float(v_twist[3])
-            updated_twist.angular.y = float(np.arctan(v_twist[4] * 0.1825 / v_twist[2])) * steering_gain
-            updated_twist.angular.z = float(v_twist[5])
+            if abs(v_twist[2]) < 1e-2: # prevents division by zero and huge steering values
+                updated_twist.angular.y = 0.0
+            else:
+                updated_twist.angular.y = float(np.arctan(v_twist[4] * 0.1778 / v_twist[2])) * steering_gain
 
             updated_twist.linear.z = float(v_twist[2])
 
@@ -131,13 +134,14 @@ class UpdatedTwistPub:
                 updated_twist.linear.y = float(v_twist[2]) * throttle_gain
             else:
                 turning_radius = 0.1778 / np.tan(updated_twist.angular.y) # 0.
+                ackerman_differential_ratio = (abs(turning_radius) - (0.1667/2)) / (abs(turning_radius) + (0.1667/2))
                 
                 if turning_radius > 0: # turning left
                     updated_twist.linear.y = float(v_twist[2] * throttle_gain) # outer (right) wheel has max velocity
-                    updated_twist.linear.x = float(((turning_radius - (0.1667 / 2)) / (turning_radius + (0.1667 / 2))) * float(v_twist[2]) * throttle_gain)
+                    updated_twist.linear.x = float(float(v_twist[2]) * ackerman_differential_ratio * throttle_gain)
                 else: # turning right
                     updated_twist.linear.x = float(v_twist[2] * throttle_gain) # outer (left) wheel has max velocity
-                    updated_twist.linear.y = float(((turning_radius - (0.1667 / 2)) / (turning_radius + (0.1667 / 2))) * float(v_twist[2]) * throttle_gain)
+                    updated_twist.linear.y = float(float(v_twist[2]) * ackerman_differential_ratio * throttle_gain)
 
             servo_error_msg = Float32MultiArray() # empty array datatype compatible with ROS
             servo_error_msg.data = e_stacked
