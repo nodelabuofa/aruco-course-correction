@@ -1,6 +1,0 @@
-TEST_DESCRIPTION:\nHallway ArUco, 1-20 feet, head on, not full lights blasting
-\nTOPICS:
-/aruco_corners_topic
-/updated_twist_topic
-/servo_error_topic
-/annotated_image_topic

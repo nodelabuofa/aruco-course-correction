@@ -8,11 +8,12 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   geometry_msgs
   std_msgs
+  message_generation
 )
 
 ## Declare a catkin package
 catkin_package(
-  CATKIN_DEPENDS rospy geometry_msgs std_msgs
+  CATKIN_DEPENDS rospy geometry_msgs std_msgs message_runtime
 )
 
 ## Install Python executables
@@ -27,6 +28,16 @@ catkin_install_python(PROGRAMS
 install(DIRECTORY launch/
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
   PATTERN ".svn" EXCLUDE
+)
+
+add_message_files(
+  FILES
+  ArucoCorners.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
 )
 
 # set(OpenCV_DIR "/opt/opencv-4.5.4/lib/cmake/opencv4")

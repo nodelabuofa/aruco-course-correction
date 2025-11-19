@@ -7,13 +7,24 @@ Detects ArUco markers and publishes corner positions to 'aruco-corners-topic'
 import rospy
 import cv2
 import numpy as np
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32MultiArray, Header
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 
 class ArucoCornersPub:
     def __init__(self): # constructor
         rospy.init_node('aruco_corners_pub')
+
+        # ArUco must be in particular orientation
+        self.desired_corners = {
+            0: {'u': -130, 'v': 200.0},  # Target for top left corner
+            1: {'u': 130, 'v': 200.0},   # Target for top right corner
+            2: {'u': 150, 'v': -85},    # Target for bottom right corner
+            3: {'u': -150.0, 'v': -85.0}    # Target for bottom left corner
+        }
+
+        # Initialize depth image to None
+        self.depth_image = None
 
         # aruco corners publisher
         self.aruco_corners_pub = rospy.Publisher('aruco_corners_topic', Float32MultiArray, queue_size=10)
@@ -27,29 +38,44 @@ class ArucoCornersPub:
         # instantiates CvBridge object, that converts RGB to format digestible by OpenCV
         self.bridge = CvBridge()
 
-        self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_50) # specifies I'm using 5x5 Aruco code, ID between 0-50
+        self.aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_50)
+
+        # Initialize aruco detection parameters
         self.aruco_params = cv2.aruco.DetectorParameters_create()
-        self.aruco_params.adaptiveThreshWinSizeMin = 3
-        self.aruco_params.adaptiveThreshWinSizeMax = 23
-        self.aruco_params.adaptiveThreshWinSizeStep = 10
+
+        # first image converted to black and white for OpenCV's ArUco detector
+        self.aruco_params.adaptiveThreshWinSizeMin = 3 # fine toothed comb
+        self.aruco_params.adaptiveThreshWinSizeMax = 100 # bigger comb idk
+        self.aruco_params.adaptiveThreshWinSizeStep = 10 # step size of combs
+        self.aruco_params.adaptiveThreshConstant = 2 # simple bias, positive makes image darker and vice versa, 
+        # positive makes it better in very bright, negative makes it better when it's darker
+
+        # Marker size filtering
+        self.aruco_params.minMarkerPerimeterRate = 0.01
+        self.aruco_params.maxMarkerPerimeterRate = 4.0
+
         self.aruco_params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
-        self.aruco_params.minMarkerDistanceRate = 0.025
+        self.aruco_params.cornerRefinementWinSize = 15
+        self.aruco_params.cornerRefinementMaxIterations = 50
+        self.aruco_params.cornerRefinementMinAccuracy = 0.01
+
+        # Distance between markers
+        self.aruco_params.minMarkerDistanceRate = 0.05 # useless for me since I'm not using two markers but could be useful someday idk
         # Can also adjust errorCorrectionRate, minMarkerPerimeterRate, etc.
 
-        # ArUco must be in particular orientation
-        self.desired_corners = {
-            0: {'u': -100.0, 'v': 150.0},  # Target for top left corner
-            1: {'u': 90, 'v': 150.0},   # Target for top right corner
-            2: {'u': 90, 'v': -50},    # Target for bottom right corner
-            3: {'u': -100.0, 'v': -50.0}    # Target for bottom left corner
-        }
+
 
     def depth_callback(self, msg):
         try:
             # convert to OpenCV float32 array (depth in meters)
             self.depth_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='32FC1') # 32 bit float, one channel (RGB is 3 high, depth is 1 high)
+            if self.depth_image is None:
+                rospy.loginfo_once("Depth image not available yet, skipping frame.")
+                return # wait until depth frame available
         except Exception as e:
             rospy.logerr(f"Depth image conversion failed: {e}")
+
+            
 
 
 
@@ -59,10 +85,15 @@ class ArucoCornersPub:
         # if self.depth_image is None:
         #     return # wait until depth frame available
 
-        f = 366 # focal length, UPDATE
+        if self.depth_image is None:
+            rospy.loginfo_once("Depth data is not available yet. Skipping RGB frame.")
+            return
+
+        f = 754 # focal length, UPDATE
         rho = 0.000002 # physical individual square pixel sensor width AND height conversion
-        cx = 315
-        cy = 178
+        cx = 473
+        cy = 267
+
 
         desired_pixel_corners = []
 
@@ -72,13 +103,16 @@ class ArucoCornersPub:
 
             # only for plotting outline of desired servo position
             u_pixel = int(u_desired + cx)
-            v_pixel = int(360 - (v_desired + cy))
+            v_pixel = int(540 - (v_desired + cy))
             desired_pixel_corners.append([u_pixel, v_pixel])
 
         pts = np.array(desired_pixel_corners, np.int32)
         pts = pts.reshape((-1, 1, 2))
 
         try:
+            # Capture the timestamp as soon as the message is received
+            start_timestamp = rospy.Time.now().to_sec() # converts to float I think
+
             cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
             # rospy.loginfo(f"Converted image shape: {cv_image.shape}, dtype: {cv_image.dtype}")
             cv2.polylines(cv_image, [pts], isClosed=True, color=(0, 255, 0), thickness=2)
@@ -101,6 +135,9 @@ class ArucoCornersPub:
                 # flatten (x,y) coordinates to single list [x1, y1, x2, y2, x3, y3, x4, y4]
                 flat_corners = np.array(corner_depths_array).flatten()
                 flat_corners_list = flat_corners.tolist()
+
+                # Add timestamp to the beginning of the list
+                flat_corners_list.insert(0, start_timestamp)
 
                 # publish to ROS
                 aruco_corners_msg = Float32MultiArray()
