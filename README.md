@@ -16,7 +16,7 @@ Following a human is a useful skill for robots, but implementing this on small, 
 
 # Background
 
-The PID feedback controller relates motion of QR code's corners in the video feed to the car's motion in real life. 
+The PID feedback controller **relates motion** of QR code's corners **in the video feed to the car's motion in real life**. 
 
 ![Interaction Matrix](images/motion.png)
 
