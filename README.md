@@ -14,6 +14,8 @@ Following a human is a useful skill for robots, but implementing this on small, 
 
 ![Visual Servoing Diagram](images/visual-servoing.png)
 
+# Background
+
 The PID feedback controller relates motion of QR code's corners in the video feed to the car's motion in real life. 
 
 ![Interaction Matrix](images/motion.png)
