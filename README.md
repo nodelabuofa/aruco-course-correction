@@ -12,7 +12,7 @@ Following a human is a useful skill for robots, but implementing this on small, 
 1. Use QR/ArUco codes to find and track people instead
 2. **Use 'where they are' - 'where they should be' as the error, no mapping needed!**
 
-![Visual Servoing Diagram](image/visual-servoing.png)
+![Visual Servoing Diagram](images/visual-servoing.png)
 
 The PID feedback controller relates motion of QR code's corners in the video feed to the car's motion in real life. 
 
