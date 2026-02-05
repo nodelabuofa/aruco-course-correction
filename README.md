@@ -20,8 +20,7 @@ The PID feedback controller **relates motion** of QR code's corners **in the vid
 
 ![Interaction Matrix](images/motion.png)
 
-The derivation is clever, I've explained it simply, assuming no background; feel free to see my notes in ./Notes.
-
+**See my notes for a simple, clever derivation**. ~[View Notes Package](Notes.pdf)
 
 # Results
 
