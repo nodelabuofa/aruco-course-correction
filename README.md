@@ -32,10 +32,10 @@ The PID feedback controller **relates motion** of QR code's corners **in the vid
   </tr>
   <tr>
     <td width="50%">
-      <img src="images/servo.gif" alt="Visual Servoing" />
+      <img src="images/servo.gif" alt="Image Based Visual Servoing" />
     </td>
     <td width="50%">
-      <img src="images/output.gif" alt="System Output" />
+      <img src="images/output.gif" alt="Plotting" />
     </td>
   </tr>
 </table>
