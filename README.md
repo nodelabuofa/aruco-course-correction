@@ -26,6 +26,23 @@ The PID feedback controller **relates motion** of QR code's corners **in the vid
 
 ![PID IBVS Controller](images/output.gif)
 
+# Implementation
+
+## Dependencies
+- ROS1 Noetic (Ubuntu 20.04)
+- Python 3 with 'numpy', 'opencv'
+- ZED SDK (for ZED Mini camera)
+- 'rosserial' (for interfacing microcontroller with ROS messages)
+
+
+```bash
+# gaming controller/joystick and ROSserial dependencies
+sudo apt install ros-noetic-joy ros-noetic-rosserial-python
+
+# Run visual servoing pipeline
+roslaunch aruco_course_correction aruco.launch
+
+
 
 ### Key Challenges
 
